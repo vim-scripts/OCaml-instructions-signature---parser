@@ -1,0 +1,57 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=1222
+
+Project is closed!
+Anyone who would like to continue it please let me know.
+
+
+If you have any suggestions or have found a bug please write to me: 
+125783@student.pwr.wroc.pl
+
+If you want to know how OCaml understands your instructions try this small script.
+This script just shows you the signature of instruction - shows the OCaml answer after parsing.
+
+Ver 0.81
+Remember to clear the buffer!! (see description below)
+
+Ver 0.79:
+Example (returning the first and the last element of the list):
+let example a = 
+  if (List.length a)=0 then failwith "Empty list!!"
+  else List.hd a, List.hd (List.rev a);;
+example [1;2;3;4];;
+
+:OCamlSigParseAllF
+# let example a  =
+  if (List.length a)=0 then failwith \"Error!!!\"
+  else List.hd a, List.hd (List.rev a);;
+      val example : 'a list -> 'a * 'a = <fun>
+# example [1;2;3;4];;
+- : int * int = (1, 4)
+
+If you want to use menu type:
+:OCamlSigMenu
+
+For parsing one instruction type
+:OCamlSigParseInstruction
+
+For parsing whole program:
+:OCamlSigParseAll
+or (for full parsing information)
+:OCamlSigParseF 
+
+To close Status Window:
+:OCamlSigStatusWinClose
+
+To open Status Window:
+:OCamlSigStatusWinShow
+
+If you want to see the buffer (list of parsed and remembered instructions):
+:OCamlSigShowOCamlBuffer
+
+For clearing this buffer:
+:OCamlSigClearOCamlBuffer
+
+If the plugin cannot find OCaml edit the plugin file, find this line:
+let s:OCamlPath = ""
+and set it to path where you have "ocaml" file
+
