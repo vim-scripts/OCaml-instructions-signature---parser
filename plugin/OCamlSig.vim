@@ -1,5 +1,5 @@
-" Vim plugin for OCaml instruction signature ver. 0.79
-" Last Change: 2005 Mar 12
+" Vim plugin for OCaml instruction signature ver. 0.79a
+" Last Change: 2005 Mar 14
 " Maintainer: Grzegorz Dymarek <125783@student.pwr.wroc.pl>" 
 " Tested on OCaml 3.08.2 and VIM 6.3.20
 
@@ -103,6 +103,7 @@ function s:StatusWindow()
 	let wh = wh/4
     	let instr = "res ".wh
 	execute instr
+	set nu!
     	wincmd p
     endif
 endfunction
@@ -187,7 +188,7 @@ function Simplify(str)
 	let ret = strpart(ret,4,strlen(ret)-4)
 	let ret = "let ".ret." = "
 	let m = match(a:str," = ")
-	let val = strpart(rets,m,strlen(rets))
+	let val = strpart(rets,m+2,strlen(rets))
 	let ret = ret.val.";;"
 	let ret = Transformate(ret,"\"","\\\"")
 	return ret
@@ -332,7 +333,7 @@ function s:ParseInstr(line,si)
 		if (s:PreviewBuf==-1)
 			echo "\n# ".buf
 			echo ret
-		else
+		else	
 			call AddText("# ".buf)
 			call AddText(ret)
 			call AddText("\n")
@@ -356,7 +357,7 @@ function s:ParseAll(d)
 	call s:ResetBuf()
 	let i = 1
 	let last = line("$")
-	while (i<=last)		
+	while (i<last)		
 		let i = s:ParseInstr(i,a:d) + 1
 	endwhile
 endfunction
