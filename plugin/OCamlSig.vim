@@ -1,5 +1,5 @@
-" Vim plugin for OCaml instruction signature ver. 0.80-beta2
-" Last Change: 2005 Mar 31
+" Vim plugin for OCaml instruction signature ver. 0.80
+" Last Change: 2005 Apr 07
 " Maintainer: Grzegorz Dymarek <125783@student.pwr.wroc.pl>" 
 " Tested on OCaml 3.08.2 and VIM 6.3.20
 
@@ -274,10 +274,14 @@ function ToBuf(instr,rett,warning)
 "			let s:LastFunL = strlen(s:Buf)
 "			let s:Buf = s:Buf."\n".a:instr			
 		else
+"			call AddText(a:instr);
+"	call AddText(a:rett);
+"			call AddText("Ssssss")
 "			call AddText(Simplify(ret))
 			let s:LastFunL = -1
 			let s:LastFun = ""
-			let s:Buf = s:Buf."\n".Simplify(ret)
+			let s:Buf = s:Buf."\n".a:instr
+			    "Simplify(ret)
 		endif
 	endif
 "	    call AddText("end")
