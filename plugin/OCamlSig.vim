@@ -1,5 +1,5 @@
-" Vim plugin for OCaml instruction signature ver. 0.80-beta
-" Last Change: 2005 Mar 20
+" Vim plugin for OCaml instruction signature ver. 0.80-beta2
+" Last Change: 2005 Mar 31
 " Maintainer: Grzegorz Dymarek <125783@student.pwr.wroc.pl>" 
 " Tested on OCaml 3.08.2 and VIM 6.3.20
 
@@ -216,12 +216,13 @@ endfunction
 function Simplify(str)
 "	let h = strridx(a:str,"\n")
 "	let rets = strpart(a:str,h+1,strlen(a:str))
+
 	let rets = a:str
 	let semi = match(rets,":")
 	let ret = strpart(rets,0,semi-1)
 	let ret = strpart(ret,4,strlen(ret)-4)
 	let ret = "let ".ret." = "
-	let m = strridx(a:str," =")
+	let m = stridx(a:str," =")
 	let val = strpart(rets,m+2,strlen(rets))
 	let ret = ret.val.";;"
 	let ret = Transformate(ret,"\"","\\\"",1)
@@ -229,32 +230,57 @@ function Simplify(str)
 	return ret
 endfunction
 
-function ToBuf(instr,ret)
-	if (TypeDeclaration(a:ret)==1)
+function ContainsWarning(str)
+	let i = strridx(a:str,"[24mWarning")
+	if (i!=-1)
+	    return 1
+	endif
+	return 0
+endfunction
+
+function Sig(str)
+	let i = strridx(a:str,"\n")
+	let ret = strpart(a:str,i+1,strlen(a:str))
+	return ret
+endfunction
+
+function ToBuf(instr,rett,warning)
+	let ret = a:rett
+	
+	if (a:warning==1)
+	    let ret = Sig(ret)
+"	    call AddText(ret)
+	endif
+		
+	if (TypeDeclaration(ret)==1)
+"		    call AddText("type")
 	    let s:LastFunL = -1
 	    let s:LastFun = ""
 	    let s:Buf = s:Buf."\n".a:instr
 	endif
-	if (Declaration(a:ret)==1)
-		if (match(s:LastFun," ".GetFunName(a:ret)." ")!=-1)
+	if (Declaration(ret)==1)
+"		    call AddText("dec")
+		if (match(s:LastFun," ".GetFunName(ret)." ")!=-1)
 			call DeleteLastFun()
 		else
-			let s:LastFun = " ".GetFunName(a:ret)." "
+			let s:LastFun = " ".GetFunName(ret)." "
 		endif
-		if (Function(a:ret))
+		if (Function(ret)==1)
+"			    call AddText("fun")
 			let s:LastFunL = strlen(s:Buf)
 			let s:Buf = s:Buf."\n".a:instr
-"		else if (Structure(a:ret))
+"		else if (Structure(ret))
 "			call AddText("struct")
 "			let s:LastFunL = strlen(s:Buf)
 "			let s:Buf = s:Buf."\n".a:instr			
 		else
-"			call AddText(Simplify(a:ret))
+"			call AddText(Simplify(ret))
 			let s:LastFunL = -1
 			let s:LastFun = ""
-			let s:Buf = s:Buf."\n".Simplify(a:ret)
+			let s:Buf = s:Buf."\n".Simplify(ret)
 		endif
 	endif
+"	    call AddText("end")
 endfunction
 
 
@@ -270,6 +296,7 @@ function FindFLine(l)
 		endif
 	endif
 endfunction
+
 
 function ContainsError(str)
 	let h = strridx(a:str,"\n")
@@ -338,6 +365,7 @@ function s:ParseInstr(line,si)
 	let num = match(buf,";;")
 	let end = 0
 	let error = 0
+	let warning = 0
 	let i = 0
 	let last_line = line("$")	
 	while (num<0 && end==0)
@@ -369,13 +397,18 @@ function s:ParseInstr(line,si)
 		let error = 1
 	else
 	endif
+	
+	if (ContainsWarning(ret)==1)
+		let warning = 1
+	else
+	endif	
 	let ret = Transformate(ret,"[4m","",3)
 "	call AddNumber()
 	let ret = Transformate(ret,"[24m","",4)
 	if (error==0)
 		let s = NumOfWChars(ret)
 		let ret = strpart(ret,s,strlen(ret))
-		call ToBuf(buf,ret)
+		call ToBuf(buf,ret,warning)
 	endif
 	if (a:si==1)
 		if (s:PreviewBuf==-1)
