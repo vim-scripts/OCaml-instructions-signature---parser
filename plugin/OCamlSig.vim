@@ -1,5 +1,5 @@
-" Vim plugin for OCaml instruction signature ver. 0.79a
-" Last Change: 2005 Mar 14
+" Vim plugin for OCaml instruction signature ver. 0.80-beta
+" Last Change: 2005 Mar 20
 " Maintainer: Grzegorz Dymarek <125783@student.pwr.wroc.pl>" 
 " Tested on OCaml 3.08.2 and VIM 6.3.20
 
@@ -16,12 +16,12 @@ let s:Buf = " "
 let s:LastFun = ""
 let s:LastFunL = -1
 
-function Transformate(str,a,b)
+function Transformate(str,a,b,d)
 	let t = match(a:str,a:a)
-	if (t==-1) 
+	if (t==-1)
 		return a:str
 	else
-		return strpart(a:str,0,t).a:b.Transformate(strpart(a:str,t+strlen(a:a),strlen(a:str)-t-strlen(a:a)),a:a,a:b)
+		return strpart(a:str,0,t).a:b.Transformate(strpart(a:str,t+a:d,strlen(a:str)-t-a:d),a:a,a:b,a:d)
 	endif
 endfunction
 
@@ -103,7 +103,8 @@ function s:StatusWindow()
 	let wh = wh/4
     	let instr = "res ".wh
 	execute instr
-	set nu!
+"	set number
+	set number!
     	wincmd p
     endif
 endfunction
@@ -118,6 +119,12 @@ function s:CloseStatus()
 	let s:WithPreview = 0
 endfunction
 			
+function AddNumber()
+"	let odp = 
+"execute ":l"
+"	echo odp
+"	if (:l!=
+endfunction 
 
 function s:ResetBuf()
 	let s:Buf = ""
@@ -153,9 +160,19 @@ function GetFunName(str)
 	return ret
 endfunction
 
+function TypeDeclaration(str)
+	if (stridx(a:str,"type ")==0)
+	    return 1
+	else
+	    return 0
+	endif
+endfunction
+
 function Declaration(str)
-	let h = strridx(a:str,"\n")
-	let ret = strpart(a:str,h+1,strlen(a:str))
+"	let h = strridx(a:str,"\n")
+"	let ret = strpart(a:str,h+1,strlen(a:str)) chyba niepotrzebne
+
+	let ret = a:str
 	let val = match(ret,"val ")
 	if (val==0)
 		return 1
@@ -169,8 +186,24 @@ function DeleteLastFun()
 endfunction
 
 function Function(str)
-	let h = strridx(a:str,"\n")
-	let ret = strpart(a:str,h+1,strlen(a:str))
+"	let h = strridx(a:str,"\n")
+"	let ret = strpart(a:str,h+1,strlen(a:str)) chyba niepotrzebne
+
+	let ret = a:str
+	let l = strlen(ret)
+	let f = strpart(ret,l-5,5)
+	if (f=="<fun>")
+		return 1
+	else
+		return 0
+	endif
+endfunction
+
+function Structure(str)
+"	let h = strridx(a:str,"\n")
+"	let ret = strpart(a:str,h+1,strlen(a:str)) chyba niepotrzebne
+
+	let ret = a:str
 	let l = strlen(ret)
 	let f = strpart(ret,l-5,5)
 	if (f=="<fun>")
@@ -181,20 +214,27 @@ function Function(str)
 endfunction
 
 function Simplify(str)
-	let h = strridx(a:str,"\n")
-	let rets = strpart(a:str,h+1,strlen(a:str))
+"	let h = strridx(a:str,"\n")
+"	let rets = strpart(a:str,h+1,strlen(a:str))
+	let rets = a:str
 	let semi = match(rets,":")
 	let ret = strpart(rets,0,semi-1)
 	let ret = strpart(ret,4,strlen(ret)-4)
 	let ret = "let ".ret." = "
-	let m = match(a:str," = ")
+	let m = strridx(a:str," =")
 	let val = strpart(rets,m+2,strlen(rets))
 	let ret = ret.val.";;"
-	let ret = Transformate(ret,"\"","\\\"")
+	let ret = Transformate(ret,"\"","\\\"",1)
+	let ret = Transformate(ret,"\\$","\\$",1)	
 	return ret
 endfunction
 
 function ToBuf(instr,ret)
+	if (TypeDeclaration(a:ret)==1)
+	    let s:LastFunL = -1
+	    let s:LastFun = ""
+	    let s:Buf = s:Buf."\n".a:instr
+	endif
 	if (Declaration(a:ret)==1)
 		if (match(s:LastFun," ".GetFunName(a:ret)." ")!=-1)
 			call DeleteLastFun()
@@ -204,7 +244,12 @@ function ToBuf(instr,ret)
 		if (Function(a:ret))
 			let s:LastFunL = strlen(s:Buf)
 			let s:Buf = s:Buf."\n".a:instr
+"		else if (Structure(a:ret))
+"			call AddText("struct")
+"			let s:LastFunL = strlen(s:Buf)
+"			let s:Buf = s:Buf."\n".a:instr			
 		else
+"			call AddText(Simplify(a:ret))
 			let s:LastFunL = -1
 			let s:LastFun = ""
 			let s:Buf = s:Buf."\n".Simplify(a:ret)
@@ -308,7 +353,9 @@ function s:ParseInstr(line,si)
 		endif
 	endwhile
 	let buf = strpart(buf,NumOfWChars(buf),strlen(buf))
-	let buf = Transformate(buf,"\"","\\\"")
+	let buf = Transformate(buf,"\"","\\\"",1)
+"	let buf = TransformateD(buf)
+	let buf = Transformate(buf,"\\$","\\$",1)	
 	let prog = s:Buf."\n".buf
 	let s:com = "echo \"".prog."\" | ".s:OCamlPath."ocaml"
 	let ret = system(s:com)	
@@ -322,8 +369,9 @@ function s:ParseInstr(line,si)
 		let error = 1
 	else
 	endif
-	let ret = Transformate(ret,"[4m","")
-	let ret = Transformate(ret,"[24m","")
+	let ret = Transformate(ret,"[4m","",3)
+"	call AddNumber()
+	let ret = Transformate(ret,"[24m","",4)
 	if (error==0)
 		let s = NumOfWChars(ret)
 		let ret = strpart(ret,s,strlen(ret))
@@ -378,6 +426,7 @@ if !executable(s:OCamlPath."ocaml")
 	echo "OCaml instruction signature"
 	echo "Can't find OCaml!!!"
 elseif !exists(":OCamlParseInstruction")
+	set number
 	command -nargs=0 OCamlSigMenu :call s:AddMenu()
 	command -nargs=0 OCamlSigParseAll :call s:ParseAll(0)
 	command -nargs=0 OCamlSigParseAllF :call s:ParseAll(1)
